@@ -46,3 +46,6 @@ temp/
 build/
 bin/
 dist/
+
+# Ignore BoltDB databases
+*.db

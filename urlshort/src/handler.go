@@ -2,7 +2,10 @@ package urlshort
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+
+	bolt "go.etcd.io/bbolt"
 
 	"gopkg.in/yaml.v3"
 )
@@ -10,7 +13,7 @@ import (
 const (
 	DATA_TYPE_JSON = "json"
 	DATA_TYPE_YAML = "yaml"
-	DATA_TYPE_DB = "db"
+	DATA_TYPE_DB   = "db"
 )
 
 // MapHandler will return an http.HandlerFunc (which also
@@ -20,7 +23,7 @@ const (
 // If the path is not provided in the map, then the fallback
 // http.Handler will be called instead.
 func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.HandlerFunc {
-	return func (w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		url := r.RequestURI
 
 		if redirect, ok := pathsToUrls[url]; ok {
@@ -34,7 +37,7 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 
 type Redirect struct {
 	From string `yaml:"path" json:"path"`
-	To string `yaml:"url" json:"url"`
+	To   string `yaml:"url" json:"url"`
 }
 
 func parseYaml(yml []byte) ([]Redirect, error) {
@@ -56,7 +59,7 @@ func parseJson(json []byte) ([]Redirect, error) {
 	return redirects, nil
 }
 
-func mapBuilder(redirects []Redirect) (map[string]string) {
+func mapBuilder(redirects []Redirect) map[string]string {
 	res := make(map[string]string, len(redirects))
 
 	for _, r := range redirects {
@@ -74,8 +77,8 @@ func mapBuilder(redirects []Redirect) (map[string]string) {
 //
 // YAML is expected to be in the format:
 //
-//     - path: /some-path
-//       url: https://www.some-url.com/demo
+//   - path: /some-path
+//     url: https://www.some-url.com/demo
 //
 // The only errors that can be returned all related to having
 // invalid YAML data.
@@ -112,4 +115,36 @@ func Handler(data []byte, dataType string, fallback http.Handler) (http.HandlerF
 	} else {
 		return nil, fmt.Errorf("data type \"%s\" not supported", dataType)
 	}
+}
+
+func DbHandler(db *bolt.DB, fallback http.Handler) (http.HandlerFunc, error) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		url := r.RequestURI
+
+		var value []byte
+
+		err := db.View(func(tx *bolt.Tx) error {
+			log.Println("viewing")
+			b := tx.Bucket([]byte("Redirects"))
+			if b == nil {
+				return fmt.Errorf("Redirects bucket not found")
+			}
+
+			value = b.Get([]byte(url))
+			if value == nil {
+				return fmt.Errorf("key not found")
+			}
+			log.Printf("value for %s: %s", url, string(value))
+
+			return nil
+		})
+
+		if err != nil {
+			log.Printf("Error: %v", err)
+			fallback.ServeHTTP(w, r)
+			return
+		}
+
+		http.Redirect(w, r, string(value), http.StatusPermanentRedirect)
+	}, nil
 }
