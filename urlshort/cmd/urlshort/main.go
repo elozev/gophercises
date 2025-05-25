@@ -1,34 +1,45 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 
-	"urlshort"
+	urlshort "urlshort/src"
+)
+
+var (
+	yamlFile = flag.String("yaml-file", "", "Specify a yaml file to read from")
 )
 
 func main() {
 	mux := defaultMux()
+	flag.Parse()
 
-	// Build the MapHandler using the mux as the fallback
-	pathsToUrls := map[string]string{
-		"/urlshort-godoc": "https://godoc.org/github.com/gophercises/urlshort",
-		"/yaml-godoc":     "https://godoc.org/gopkg.in/yaml.v2",
-	}
+	var yaml []byte
+	var err error
 
-	log.Println(pathsToUrls)
-	mapHandler := urlshort.MapHandler(pathsToUrls, mux)
+	if *yamlFile != "" {
+		log.Println("Yaml file specified, reading!")
+		yaml, err = urlshort.ParseFile(*yamlFile)
 
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+	} else {
 	// Build the YAMLHandler using the mapHandler as the
 	// fallback
-	yaml := `
+		yaml = []byte(`
 - path: /urlshort
   url: https://github.com/gophercises/urlshort
 - path: /urlshort-final
   url: https://github.com/gophercises/urlshort/tree/solution
-`
-	yamlHandler, err := urlshort.YAMLHandler([]byte(yaml), mapHandler)
+`)
+	}
+
+	yamlHandler, err := urlshort.YAMLHandler([]byte(yaml), mux)
 	if err != nil {
 		panic(err)
 	}
