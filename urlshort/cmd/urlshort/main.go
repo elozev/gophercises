@@ -5,33 +5,43 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"path/filepath"
 
 	urlshort "urlshort/src"
 )
 
 var (
-	yamlFile = flag.String("yaml-file", "", "Specify a yaml file to read from")
+	readFile = flag.String("file", "", "Specify a yaml or json file to read from")
 )
 
 func main() {
 	mux := defaultMux()
 	flag.Parse()
 
-	var yaml []byte
+	var data []byte
 	var err error
+	var dataType = urlshort.DATA_TYPE_YAML
 
-	if *yamlFile != "" {
-		log.Println("Yaml file specified, reading!")
-		yaml, err = urlshort.ParseFile(*yamlFile)
+	if *readFile != "" {
+		log.Println("File specified, reading!")
+		data, err = urlshort.ParseFile(*readFile)
 
 		if err != nil {
 			log.Fatalln(err)
 		}
 
+		fileExtension := filepath.Ext(*readFile) 
+
+		if fileExtension == "yaml" || fileExtension == "yml" {
+			dataType = urlshort.DATA_TYPE_YAML
+		} else if fileExtension == "json" {
+			dataType = urlshort.DATA_TYPE_JSON
+		}
+		
 	} else {
 	// Build the YAMLHandler using the mapHandler as the
 	// fallback
-		yaml = []byte(`
+		data = []byte(`
 - path: /urlshort
   url: https://github.com/gophercises/urlshort
 - path: /urlshort-final
@@ -39,7 +49,7 @@ func main() {
 `)
 	}
 
-	yamlHandler, err := urlshort.YAMLHandler([]byte(yaml), mux)
+	yamlHandler, err := urlshort.Handler([]byte(data),dataType, mux)
 	if err != nil {
 		panic(err)
 	}

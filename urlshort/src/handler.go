@@ -1,9 +1,16 @@
 package urlshort
 
 import (
+	"fmt"
 	"net/http"
 
 	"gopkg.in/yaml.v3"
+)
+
+const (
+	DATA_TYPE_JSON = "json"
+	DATA_TYPE_YAML = "yaml"
+	DATA_TYPE_DB = "db"
 )
 
 // MapHandler will return an http.HandlerFunc (which also
@@ -26,8 +33,8 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 }
 
 type Redirect struct {
-	From string `yaml:"path"`
-	To string `yaml:"url"`
+	From string `yaml:"path" json:"path"`
+	To string `yaml:"url" json:"url"`
 }
 
 func parseYaml(yml []byte) ([]Redirect, error) {
@@ -36,6 +43,16 @@ func parseYaml(yml []byte) ([]Redirect, error) {
 	if err != nil {
 		return nil, err
 	}
+	return redirects, nil
+}
+
+func parseJson(json []byte) ([]Redirect, error) {
+	var redirects []Redirect
+	err := yaml.Unmarshal(json, &redirects)
+	if err != nil {
+		return nil, err
+	}
+
 	return redirects, nil
 }
 
@@ -74,4 +91,25 @@ func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 
 	pathsToUrls := mapBuilder(redirects)
 	return MapHandler(pathsToUrls, fallback), nil
+}
+
+func JsonHandler(json []byte, fallback http.Handler) (http.HandlerFunc, error) {
+	redirects, err := parseJson(json)
+
+	if err != nil {
+		return nil, err
+	}
+
+	pathsToUrls := mapBuilder(redirects)
+	return MapHandler(pathsToUrls, fallback), nil
+}
+
+func Handler(data []byte, dataType string, fallback http.Handler) (http.HandlerFunc, error) {
+	if dataType == DATA_TYPE_JSON {
+		return JsonHandler(data, fallback)
+	} else if dataType == DATA_TYPE_YAML {
+		return YAMLHandler(data, fallback)
+	} else {
+		return nil, fmt.Errorf("data type \"%s\" not supported", dataType)
+	}
 }
