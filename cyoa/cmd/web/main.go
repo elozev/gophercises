@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -28,12 +27,12 @@ func main() {
 	cyoa.Check(err)
 	defer file.Close()
 
-	fileContents, err := io.ReadAll(file)
-	cyoa.Check(err)
-
 	var storiesHolder cyoa.Story
 
-	err = json.Unmarshal(fileContents, &storiesHolder)
+	d := json.NewDecoder(file)
+	cyoa.Check(err)
+
+	err = d.Decode(&storiesHolder)
 	cyoa.Check(err)
 
 	sh.Stories = storiesHolder
