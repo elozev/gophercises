@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"text/template"
 )
 
@@ -36,7 +37,7 @@ var styles = `
 		}
 
 		.text {
-			text-transform: italic;
+			font-style: italic;
 		}
 
 		body {
@@ -47,10 +48,16 @@ var styles = `
 		a {
 			display: inline-block;
 			margin: 10px;
-			padding: 5px 15px;
-			background: lightblue;
+			padding: 10px 15px;
+			background: coral;
 			color: white;
 			border-radius: 4px;
+
+			transition: border-radius 0.2s;
+		}
+
+		a:hover {
+			border-radius: 16px;
 		}
 	</style>
 `
@@ -68,8 +75,9 @@ func (sh *StoryHandler) StoryHandler(w http.ResponseWriter, r *http.Request) {
 		<div class="content">
 			<h1>{{ .Title }}</h1>
 			<br/>
-
-			<p class="text">{{ .Text }}</p>
+			{{ range $paragraph := .Text }}
+			<p class="text">{{ $paragraph }}</p>
+			{{ end }}
 
 			{{ range $opt := .Options }}
 				<p class="text">{{ $opt.Text }}</p>
@@ -128,4 +136,55 @@ func (sh *StoryHandler) IndexHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	err = t.Execute(w, data)
 	Check(err)
+}
+
+func printChapter(chapter Chapter) {
+	fmt.Printf("-----\n%s\n", chapter.Title)
+
+	for _, v := range chapter.Text {
+		fmt.Println(v)
+	}
+
+	if len(chapter.Options) > 0 {
+		fmt.Printf("\n--\nContinue by selecting:\n")
+	} else {
+		fmt.Println("Game over")
+	}
+
+	for _, opt := range chapter.Options {
+		fmt.Printf("[%s] %s\n", opt.Chapter, opt.Text)
+	}
+}
+
+func (sh *StoryHandler) CliHandler() {
+
+	var story = sh.Stories["intro"]
+
+main:
+	for true {
+		printChapter(story)
+		var userInput string
+		valid := false
+
+	out:
+		for !valid {
+			if len(story.Options) == 0 {
+				break main
+			}
+
+			fmt.Printf("Enter your choice: ")
+			fmt.Scanf("%s\n", &userInput)
+
+			for _, opt := range story.Options {
+				if opt.Chapter == strings.TrimSpace(userInput) {
+					valid = true
+					break out
+				}
+			}
+			fmt.Printf("%s is not a valid option; try again\n", userInput)
+		}
+
+		nextStory := sh.Stories[userInput]
+		story = nextStory
+	}
 }
