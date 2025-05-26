@@ -2,7 +2,6 @@ package main
 
 import (
 	cyoa "cyoa/src"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -18,7 +17,6 @@ var (
 
 func main() {
 	flag.Parse()
-	fmt.Println("Web program!")
 
 	var sh cyoa.StoryHandler
 
@@ -27,15 +25,9 @@ func main() {
 	cyoa.Check(err)
 	defer file.Close()
 
-	var storiesHolder cyoa.Story
-
-	d := json.NewDecoder(file)
+	stories, err := cyoa.JsonStory(file)
 	cyoa.Check(err)
-
-	err = d.Decode(&storiesHolder)
-	cyoa.Check(err)
-
-	sh.Stories = storiesHolder
+	sh.Stories = stories
 
 	if !*cli {
 		mux := http.NewServeMux()

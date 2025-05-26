@@ -1,7 +1,9 @@
 package cyoa
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -187,4 +189,16 @@ main:
 		nextStory := sh.Stories[userInput]
 		story = nextStory
 	}
+}
+
+func JsonStory(r io.Reader) (Story, error) {
+	var storiesHolder Story
+	d := json.NewDecoder(r)
+
+	err := d.Decode(&storiesHolder)
+	if err != nil {
+		return nil, err
+	}
+
+	return storiesHolder, nil
 }
