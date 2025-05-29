@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -19,16 +18,19 @@ func check(err error) {
 }
 
 func traverse(node *html.Node) {
-	log.Printf("node: %+v\n", node)
-	for desc := range node.ChildNodes() {
-		traverse(desc)
+	if node.FirstChild != nil {
+		fmt.Printf("type: <%v> | first child: <%v> \n", node.DataAtom, node.FirstChild.DataAtom)
+	} else {
+		fmt.Printf("type: <%v> \n", node.DataAtom)
 	}
 
-	return
+	for c := node.FirstChild; c != nil; c = node.NextSibling {
+		traverse(c)
+	}
 }
 
 func main() {
-	var filename = flag.String("filename", "ex1.html", "HTML file to parse!")
+	var filename = flag.String("filename", "exam.html", "HTML file to parse!")
 	flag.Parse()
 
 	if filepath.Ext(*filename) != ".html" {
@@ -39,16 +41,14 @@ func main() {
 	check(err)
 	defer file.Close()
 
-	contents, err := io.ReadAll(file)
-	check(err)
+	// contents, err := io.ReadAll(file)
+	// check(err)
 
-	log.Println("read from file: \n" + string(contents))
+	// log.Println("read from file: \n" + string(contents))
+	// fmt.Println("------------------------")
 
 	node, err := html.Parse(file)
 	check(err)
 
 	traverse(node)
-	// fmt.Printf("First node is: %v \n", node.Namespace)
-	fmt.Printf("First node is: %+v \n", node)
-	// fmt.Printf("First node is: %#v \n", html.NodeType(node.Type))
 }
