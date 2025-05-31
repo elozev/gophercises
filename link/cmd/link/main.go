@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	link "link/pkg"
+
 	"golang.org/x/net/html"
 )
 
@@ -24,13 +26,13 @@ func traverse(node *html.Node) {
 		fmt.Printf("type: <%v> \n", node.DataAtom)
 	}
 
-	for c := node.FirstChild; c != nil; c = node.NextSibling {
+	for c := node.FirstChild; c != nil; c = c.NextSibling {
 		traverse(c)
 	}
 }
 
 func main() {
-	var filename = flag.String("filename", "exam.html", "HTML file to parse!")
+	var filename = flag.String("filename", "ex1.html", "HTML file to parse!")
 	flag.Parse()
 
 	if filepath.Ext(*filename) != ".html" {
@@ -47,8 +49,12 @@ func main() {
 	// log.Println("read from file: \n" + string(contents))
 	// fmt.Println("------------------------")
 
-	node, err := html.Parse(file)
+	// node, err := link.HTMLFileToLinks(file)
+
+	links, err := link.HTMLFileToLinks(file)
 	check(err)
 
-	traverse(node)
+	fmt.Printf("list of links: %v \n", links)
+
+	// traverse(node)
 }
