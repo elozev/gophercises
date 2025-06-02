@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 
 	link "link/pkg"
-
-	"golang.org/x/net/html"
 )
 
 func check(err error) {
@@ -17,18 +15,6 @@ func check(err error) {
 		log.Fatal(err)
 	}
 
-}
-
-func traverse(node *html.Node) {
-	if node.FirstChild != nil {
-		fmt.Printf("type: <%v> | first child: <%v> \n", node.DataAtom, node.FirstChild.DataAtom)
-	} else {
-		fmt.Printf("type: <%v> \n", node.DataAtom)
-	}
-
-	for c := node.FirstChild; c != nil; c = c.NextSibling {
-		traverse(c)
-	}
 }
 
 func main() {
@@ -43,18 +29,8 @@ func main() {
 	check(err)
 	defer file.Close()
 
-	// contents, err := io.ReadAll(file)
-	// check(err)
-
-	// log.Println("read from file: \n" + string(contents))
-	// fmt.Println("------------------------")
-
-	// node, err := link.HTMLFileToLinks(file)
-
 	links, err := link.HTMLFileToLinks(file)
 	check(err)
 
-	fmt.Printf("list of links: %v \n", links)
-
-	// traverse(node)
+	fmt.Printf("links: %+v \n", links)
 }
