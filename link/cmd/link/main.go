@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	link "link/pkg"
+	link "github.com/elozev/gophercises/link/pkg"
 )
 
 func check(err error) {

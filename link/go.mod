@@ -1,4 +1,4 @@
-module link
+module github.com/elozev/gophercises/link
 
 go 1.24.1
 
