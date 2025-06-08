@@ -81,9 +81,6 @@ func getPageInternalLinks(url string) []link.Link {
 	br := bytes.NewReader(body)
 	links := parseLinks(br)
 	internal := onlyInternal(links, url)
-	for _, i := range internal {
-		log.Println(i.Href)
-	}
 	return internal
 }
 
