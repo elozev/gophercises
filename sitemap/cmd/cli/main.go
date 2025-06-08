@@ -2,7 +2,8 @@ package main
 
 import (
 	"flag"
-	sitemap "sitemap/pkg"
+
+	sitemap "github.com/elozev/gophercises/sitemap/pkg"
 )
 
 func main() {
