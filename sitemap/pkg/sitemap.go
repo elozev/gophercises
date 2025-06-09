@@ -109,13 +109,29 @@ func cleanUrl(rawURL string) string {
 	return parsedURL.Scheme + "://" + parsedURL.Host
 }
 
+func visitedToUrlSet(visited map[string]bool, baseUrl string) UrlSet {
+	urlSet := UrlSet{}
+
+	for k := range visited {
+		urlSet.Urls = append(urlSet.Urls, EntryLoc{
+			Loc: baseUrl + k,
+		})
+	}
+
+	return urlSet
+}
+
 func RetrieveSiteMap(baseURL string) {
+	url, _ := url.Parse(baseURL)
 	cURL := cleanUrl(baseURL)
 
 	visited := make(map[string]bool)
 
 	v := traverse(cURL, "/", visited)
 
-	fmt.Printf("visited: %+v\ntotal links: %d\n", v, len(v))
+	fmt.Printf("total links: %d\n", len(v))
 
+	urlSet := visitedToUrlSet(visited, cURL)
+
+	urlSet.EncodeXML(url.Host)
 }
